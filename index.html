@@ -24,7 +24,10 @@
         border-radius:14px; margin-bottom:20px}
   .tabs button{
     flex:1; border:0; background:transparent; color:var(--muted);
-    font:700 14px/1 inherit; padding:11px 8px; border-radius:11px; cursor:pointer;
+    font-size:14px; font-weight:700; font-family:inherit;
+    padding:12px 8px; border-radius:11px; cursor:pointer;
+    touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+    -webkit-appearance:none; appearance:none;
   }
   .tabs button[aria-selected="true"]{background:var(--accent); color:var(--bg)}
   .group-title{
@@ -37,9 +40,15 @@
   }
   .vote{
     flex:0 0 auto; min-width:54px; background:var(--card2); border:1px solid var(--line);
-    border-radius:12px; padding:8px 6px; text-align:center; cursor:pointer;
-    color:var(--muted); font:700 13px/1.2 inherit; transition:.15s;
+    border-radius:12px; padding:10px 6px; text-align:center; cursor:pointer;
+    color:var(--muted); font-size:13px; font-weight:700; line-height:1.2;
+    font-family:inherit; transition:.15s;
+    /* Χωρίς αυτά, το iOS περιμένει δεύτερο χτύπημα (ζουμ) και το πάτημα
+       μοιάζει να μη «φτάνει». */
+    touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+    -webkit-appearance:none; appearance:none;
   }
+  .vote:active{transform:scale(.94)}
   .vote:hover{border-color:var(--accent)}
   .vote[data-voted="1"]{border-color:var(--accent); color:var(--accent); background:#182a1e}
   .vote .arrow{display:block; font-size:12px; margin-bottom:2px}
@@ -57,7 +66,9 @@
   .kind{display:flex; gap:8px; margin-bottom:16px}
   .kind button{
     flex:1; border:1px solid var(--line); background:var(--card2); color:var(--muted);
-    border-radius:12px; padding:12px; font:700 14px/1 inherit; cursor:pointer;
+    border-radius:12px; padding:13px; font-size:14px; font-weight:700;
+    font-family:inherit; cursor:pointer; touch-action:manipulation;
+    -webkit-tap-highlight-color:transparent; -webkit-appearance:none; appearance:none;
   }
   .kind button[aria-pressed="true"]{border-color:var(--accent); color:var(--accent); background:#182a1e}
   textarea{
@@ -68,7 +79,9 @@
   textarea:focus{outline:none; border-color:var(--accent)}
   .send{
     width:100%; margin-top:14px; background:var(--accent); color:var(--bg);
-    border:0; border-radius:14px; padding:15px; font:800 16px/1 inherit; cursor:pointer;
+    border:0; border-radius:14px; padding:16px; font-size:16px; font-weight:800;
+    font-family:inherit; cursor:pointer; touch-action:manipulation;
+    -webkit-tap-highlight-color:transparent; -webkit-appearance:none; appearance:none;
   }
   .send:disabled{opacity:.5; cursor:default}
   .note{color:var(--muted); font-size:12px; margin-top:12px; line-height:1.5}
@@ -95,6 +108,7 @@
 
   <section id="roadmap">
     <div id="list"><p class="empty">Φορτώνει…</p></div>
+    <div class="msg" id="vote-msg"></div>
     <p class="note">Η ψήφος σου μένει σε αυτή τη συσκευή. Δεν χρειάζεται λογαριασμός και δεν ζητάμε τίποτα δικό σου.</p>
   </section>
 
@@ -174,6 +188,7 @@ async function load() {
     if (!list.children.length) list.innerHTML = '<p class="empty">Σύντομα εδώ.</p>';
   } catch (e) {
     list.innerHTML = '<p class="empty">Δεν φόρτωσε η λίστα. Δοκίμασε ανανέωση.</p>';
+    note(e && e.message ? e.message : 'άγνωστο σφάλμα');
   }
 }
 
@@ -182,6 +197,7 @@ function card(item) {
   el.className = 'item';
 
   const vote = document.createElement('button');
+  vote.type = 'button';
   vote.className = 'vote';
   vote.dataset.voted = mine.has(item.id) ? '1' : '0';
   vote.innerHTML = `<span class="arrow">▲</span>${item.votes}`;
@@ -190,7 +206,7 @@ function card(item) {
     vote.disabled = true;
     vote.style.opacity = .45;
   } else {
-    vote.onclick = () => toggleVote(item, vote);
+    vote.addEventListener('click', () => toggleVote(item, vote));
   }
 
   const body = document.createElement('div');
@@ -221,11 +237,23 @@ async function toggleVote(item, button) {
           headers: { ...H, Prefer: 'return=minimal' },
           body: JSON.stringify({ item_id: item.id, voter_key: ME }),
         });
-    if (!res.ok) throw new Error('vote');
+    if (!res.ok) throw new Error(`${res.status} ${await res.text()}`.slice(0, 160));
     voted ? mine.delete(item.id) : mine.add(item.id);
+    note('');
   } catch (e) {
+    // ⚠️ Σιωπηλή επαναφορά = «το κουμπί δεν πατιέται». Η χρήστρια δεν μπορεί
+    // να ξεχωρίσει το χαλασμένο κουμπί από το αποτυχημένο αίτημα, και μας το
+    // αναφέρει ως «δεν δουλεύει» — που δεν λέει τίποτα.
     paint(button, voted, count);
+    note('Η ψήφος δεν καταχωρήθηκε: ' + (e && e.message ? e.message : 'άγνωστο σφάλμα'));
   }
+}
+
+/// Μήνυμα κάτω από τη λίστα. Κενό κείμενο το κρύβει.
+function note(text) {
+  const box = document.getElementById('vote-msg');
+  box.textContent = text;
+  box.className = text ? 'msg err' : 'msg';
 }
 
 function paint(button, voted, count) {
@@ -242,10 +270,10 @@ function pickKind(next) {
   kBug.setAttribute('aria-pressed', String(next === 'bug'));
   kIdea.setAttribute('aria-pressed', String(next === 'idea'));
 }
-kBug.onclick = () => pickKind('bug');
-kIdea.onclick = () => pickKind('idea');
+kBug.addEventListener('click', () => pickKind('bug'));
+kIdea.addEventListener('click', () => pickKind('idea'));
 
-document.getElementById('form').onsubmit = async (e) => {
+document.getElementById('form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const box = document.getElementById('message');
   const msg = document.getElementById('msg');
@@ -277,7 +305,7 @@ document.getElementById('form').onsubmit = async (e) => {
     send.disabled = false;
     send.textContent = 'Στείλ’ το';
   }
-};
+});
 
 /* ── Καρτέλες ── */
 const tabs = { roadmap: document.getElementById('tab-roadmap'), say: document.getElementById('tab-say') };
@@ -287,12 +315,18 @@ function show(which) {
   tabs.roadmap.setAttribute('aria-selected', String(which === 'roadmap'));
   tabs.say.setAttribute('aria-selected', String(which === 'say'));
 }
-tabs.roadmap.onclick = () => show('roadmap');
-tabs.say.onclick = () => show('say');
+tabs.roadmap.addEventListener('click', () => show('roadmap'));
+tabs.say.addEventListener('click', () => show('say'));
 
 /* Με #say στη διεύθυνση ανοίγει κατευθείαν η φόρμα: η εφαρμογή στέλνει εκεί
    όποιον πατάει «Δήλωσε πρόβλημα». */
 if (location.hash === '#say') show('say');
+
+/* Ό,τι σκάσει στη σελίδα το βλέπει η χρήστρια — αλλιώς μας το αναφέρει ως
+   «δεν δουλεύει» και ψάχνουμε στα τυφλά. */
+window.addEventListener('error', (e) => note('Σφάλμα σελίδας: ' + e.message));
+window.addEventListener('unhandledrejection', (e) =>
+  note('Σφάλμα δικτύου: ' + (e.reason && e.reason.message ? e.reason.message : e.reason)));
 
 load();
 </script>
