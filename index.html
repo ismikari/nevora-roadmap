@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nevora — Τι έρχεται</title>
+<meta name="description" content="Δες τι ετοιμάζεται στη Nevora, ψήφισε τι θες πρώτο, και πες μας αν κάτι χάλασε.">
+<style>
+  :root{
+    --bg:#080B10; --card:#151C24; --card2:#1C242E; --line:#242E3A;
+    --text:#E8EDF2; --muted:#8A97A6; --accent:#67D17A; --accent-soft:#9BE7A8;
+    --danger:#E5737A;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:720px; margin:0 auto; padding:28px 18px 64px}
+  header h1{font-size:26px; font-weight:800; margin:0 0 6px}
+  header p{color:var(--muted); margin:0 0 22px; font-size:14px}
+  .tabs{display:flex; gap:6px; background:var(--card); padding:4px;
+        border-radius:14px; margin-bottom:20px}
+  .tabs button{
+    flex:1; border:0; background:transparent; color:var(--muted);
+    font:700 14px/1 inherit; padding:11px 8px; border-radius:11px; cursor:pointer;
+  }
+  .tabs button[aria-selected="true"]{background:var(--accent); color:var(--bg)}
+  .group-title{
+    color:var(--muted); font-size:11px; font-weight:700; letter-spacing:1.1px;
+    margin:22px 0 10px;
+  }
+  .item{
+    display:flex; gap:12px; background:var(--card); border-radius:16px;
+    padding:14px; margin-bottom:10px; align-items:flex-start;
+  }
+  .vote{
+    flex:0 0 auto; min-width:54px; background:var(--card2); border:1px solid var(--line);
+    border-radius:12px; padding:8px 6px; text-align:center; cursor:pointer;
+    color:var(--muted); font:700 13px/1.2 inherit; transition:.15s;
+  }
+  .vote:hover{border-color:var(--accent)}
+  .vote[data-voted="1"]{border-color:var(--accent); color:var(--accent); background:#182a1e}
+  .vote .arrow{display:block; font-size:12px; margin-bottom:2px}
+  .item h3{margin:0 0 4px; font-size:15px; font-weight:700}
+  .item p{margin:0; color:var(--muted); font-size:13px}
+  .badge{
+    display:inline-block; margin-top:8px; font-size:11px; font-weight:700;
+    padding:3px 9px; border-radius:7px;
+  }
+  .b-done{background:#182a1e; color:var(--accent)}
+  .b-doing{background:#2a2518; color:#E5C173}
+  .b-planned{background:var(--card2); color:var(--muted)}
+  form{background:var(--card); border-radius:16px; padding:16px}
+  label{display:block; font-size:13px; color:var(--muted); margin:0 0 8px}
+  .kind{display:flex; gap:8px; margin-bottom:16px}
+  .kind button{
+    flex:1; border:1px solid var(--line); background:var(--card2); color:var(--muted);
+    border-radius:12px; padding:12px; font:700 14px/1 inherit; cursor:pointer;
+  }
+  .kind button[aria-pressed="true"]{border-color:var(--accent); color:var(--accent); background:#182a1e}
+  textarea{
+    width:100%; min-height:130px; background:var(--card2); color:var(--text);
+    border:1px solid var(--line); border-radius:12px; padding:12px;
+    font:15px/1.5 inherit; resize:vertical;
+  }
+  textarea:focus{outline:none; border-color:var(--accent)}
+  .send{
+    width:100%; margin-top:14px; background:var(--accent); color:var(--bg);
+    border:0; border-radius:14px; padding:15px; font:800 16px/1 inherit; cursor:pointer;
+  }
+  .send:disabled{opacity:.5; cursor:default}
+  .note{color:var(--muted); font-size:12px; margin-top:12px; line-height:1.5}
+  .msg{margin-top:12px; font-size:14px; padding:12px; border-radius:12px; display:none}
+  .msg.ok{display:block; background:#182a1e; color:var(--accent)}
+  .msg.err{display:block; background:#2a1a1c; color:var(--danger)}
+  footer{margin-top:40px; color:var(--muted); font-size:12px; text-align:center}
+  footer a{color:var(--muted)}
+  .empty{color:var(--muted); font-size:14px; padding:20px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Nevora</h1>
+    <p>Δες τι ετοιμάζεται, ψήφισε τι θες να γίνει πρώτο, και πες μας αν κάτι χάλασε.</p>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true"  id="tab-roadmap">Τι έρχεται</button>
+    <button role="tab" aria-selected="false" id="tab-say">Πες μας κάτι</button>
+  </div>
+
+  <section id="roadmap">
+    <div id="list"><p class="empty">Φορτώνει…</p></div>
+    <p class="note">Η ψήφος σου μένει σε αυτή τη συσκευή. Δεν χρειάζεται λογαριασμός και δεν ζητάμε τίποτα δικό σου.</p>
+  </section>
+
+  <section id="say" hidden>
+    <form id="form">
+      <label>Τι θέλεις να μας πεις;</label>
+      <div class="kind">
+        <button type="button" id="k-bug"  aria-pressed="true">🐞 Κάτι χάλασε</button>
+        <button type="button" id="k-idea" aria-pressed="false">💡 Έχω μια ιδέα</button>
+      </div>
+      <label for="message">Γράψε το με δικά σου λόγια</label>
+      <textarea id="message" maxlength="4000"
+        placeholder="Π.χ.: Πάτησα «Πρόσθεσε στο σήμερα» και δεν εμφανίστηκε τίποτα στην Αρχική."></textarea>
+      <button class="send" id="send" type="submit">Στείλ’ το</button>
+      <div class="msg" id="msg"></div>
+      <p class="note">
+        Αν αναφέρεις πρόβλημα, γράψε <strong>τι έκανες ακριβώς πριν συμβεί</strong> — αυτό είναι
+        που το κάνει επιδιορθώσιμο. Δεν στέλνουμε τίποτα άλλο μαζί: ούτε όνομα, ούτε email,
+        ούτε τα δεδομένα σου.
+      </p>
+    </form>
+  </section>
+
+  <footer>
+    <a href="https://ismikari.github.io/nevora-legal/">Πολιτική απορρήτου</a>
+  </footer>
+</div>
+
+<script>
+const API = 'https://zpaplbqajvfyfsgknczm.supabase.co/rest/v1';
+const KEY = 'sb_publishable_2HlCwcgz6QxOqLMORvUSPg_1tztyB-P';
+const H = { apikey: KEY, 'Content-Type': 'application/json' };
+
+/* Κλειδί επισκέπτη: τυχαίο, μένει μόνο σε αυτόν τον περιηγητή. Δεν ταυτοποιεί
+   άνθρωπο — εμποδίζει μόνο δέκα ψήφους με ένα κλικ. */
+function voterKey() {
+  try {
+    let k = localStorage.getItem('nevora_voter');
+    if (!k) {
+      k = 'v' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      localStorage.setItem('nevora_voter', k);
+    }
+    return k;
+  } catch (e) {
+    /* Χωρίς localStorage (ιδιωτική περιήγηση) η ψήφος δεν θυμάται — αλλά η
+       σελίδα πρέπει να δουλεύει. */
+    return 'v' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  }
+}
+const ME = voterKey();
+
+const LABELS = { doing: 'ΓΙΝΕΤΑΙ ΤΩΡΑ', planned: 'ΣΧΕΔΙΑΖΕΤΑΙ', done: 'ΕΤΟΙΜΟ' };
+const ORDER = ['doing', 'planned', 'done'];
+let mine = new Set();
+
+async function load() {
+  const list = document.getElementById('list');
+  try {
+    const [itemsRes, votesRes] = await Promise.all([
+      fetch(`${API}/roadmap_public?select=*&order=position`, { headers: H }),
+      fetch(`${API}/roadmap_votes?select=item_id&voter_key=eq.${encodeURIComponent(ME)}`, { headers: H }),
+    ]);
+    if (!itemsRes.ok) throw new Error('items');
+    const items = await itemsRes.json();
+    mine = new Set(votesRes.ok ? (await votesRes.json()).map(v => v.item_id) : []);
+
+    list.innerHTML = '';
+    for (const status of ORDER) {
+      const group = items.filter(i => i.status === status);
+      if (!group.length) continue;
+      const h = document.createElement('div');
+      h.className = 'group-title';
+      h.textContent = LABELS[status];
+      list.appendChild(h);
+      group.forEach(i => list.appendChild(card(i)));
+    }
+    if (!list.children.length) list.innerHTML = '<p class="empty">Σύντομα εδώ.</p>';
+  } catch (e) {
+    list.innerHTML = '<p class="empty">Δεν φόρτωσε η λίστα. Δοκίμασε ανανέωση.</p>';
+  }
+}
+
+function card(item) {
+  const el = document.createElement('div');
+  el.className = 'item';
+
+  const vote = document.createElement('button');
+  vote.className = 'vote';
+  vote.dataset.voted = mine.has(item.id) ? '1' : '0';
+  vote.innerHTML = `<span class="arrow">▲</span>${item.votes}`;
+  /* Τα έτοιμα δεν ψηφίζονται: δεν αλλάζει τίποτα η ψήφος σε κάτι που έγινε. */
+  if (item.status === 'done') {
+    vote.disabled = true;
+    vote.style.opacity = .45;
+  } else {
+    vote.onclick = () => toggleVote(item, vote);
+  }
+
+  const body = document.createElement('div');
+  const badge = `<span class="badge b-${item.status}">${LABELS[item.status]}</span>`;
+  body.innerHTML =
+    `<h3></h3><p></p>${item.status === 'done' ? badge : ''}`;
+  body.querySelector('h3').textContent = item.title;
+  body.querySelector('p').textContent = item.description;
+
+  el.append(vote, body);
+  return el;
+}
+
+async function toggleVote(item, button) {
+  const voted = button.dataset.voted === '1';
+  const count = Number(button.textContent.replace(/\D/g, '')) || 0;
+
+  /* Αλλάζουμε την οθόνη ΑΜΕΣΩΣ και διορθώνουμε αν αποτύχει: ένα κουμπί που
+     «παγώνει» μέχρι να απαντήσει ο διακομιστής μοιάζει χαλασμένο. */
+  paint(button, !voted, voted ? count - 1 : count + 1);
+
+  try {
+    const res = voted
+      ? await fetch(`${API}/roadmap_votes?item_id=eq.${item.id}&voter_key=eq.${encodeURIComponent(ME)}`,
+          { method: 'DELETE', headers: H })
+      : await fetch(`${API}/roadmap_votes`, {
+          method: 'POST',
+          headers: { ...H, Prefer: 'return=minimal' },
+          body: JSON.stringify({ item_id: item.id, voter_key: ME }),
+        });
+    if (!res.ok) throw new Error('vote');
+    voted ? mine.delete(item.id) : mine.add(item.id);
+  } catch (e) {
+    paint(button, voted, count);
+  }
+}
+
+function paint(button, voted, count) {
+  button.dataset.voted = voted ? '1' : '0';
+  button.innerHTML = `<span class="arrow">▲</span>${count}`;
+}
+
+/* ── Πες μας κάτι ── */
+let kind = 'bug';
+const kBug = document.getElementById('k-bug');
+const kIdea = document.getElementById('k-idea');
+function pickKind(next) {
+  kind = next;
+  kBug.setAttribute('aria-pressed', String(next === 'bug'));
+  kIdea.setAttribute('aria-pressed', String(next === 'idea'));
+}
+kBug.onclick = () => pickKind('bug');
+kIdea.onclick = () => pickKind('idea');
+
+document.getElementById('form').onsubmit = async (e) => {
+  e.preventDefault();
+  const box = document.getElementById('message');
+  const msg = document.getElementById('msg');
+  const send = document.getElementById('send');
+  const text = box.value.trim();
+
+  if (text.length < 3) {
+    msg.className = 'msg err';
+    msg.textContent = 'Γράψε λίγα λόγια ακόμη, για να καταλάβουμε.';
+    return;
+  }
+
+  send.disabled = true;
+  send.textContent = 'Στέλνω…';
+  try {
+    const res = await fetch(`${API}/feedback`, {
+      method: 'POST',
+      headers: { ...H, Prefer: 'return=minimal' },
+      body: JSON.stringify({ kind, message: text, platform: 'web', app_version: 'roadmap' }),
+    });
+    if (!res.ok) throw new Error('send');
+    msg.className = 'msg ok';
+    msg.textContent = 'Το λάβαμε. Ευχαριστούμε — διαβάζονται όλα.';
+    box.value = '';
+  } catch (err) {
+    msg.className = 'msg err';
+    msg.textContent = 'Δεν στάλθηκε. Έλεγξε τη σύνδεσή σου και δοκίμασε ξανά.';
+  } finally {
+    send.disabled = false;
+    send.textContent = 'Στείλ’ το';
+  }
+};
+
+/* ── Καρτέλες ── */
+const tabs = { roadmap: document.getElementById('tab-roadmap'), say: document.getElementById('tab-say') };
+function show(which) {
+  document.getElementById('roadmap').hidden = which !== 'roadmap';
+  document.getElementById('say').hidden = which !== 'say';
+  tabs.roadmap.setAttribute('aria-selected', String(which === 'roadmap'));
+  tabs.say.setAttribute('aria-selected', String(which === 'say'));
+}
+tabs.roadmap.onclick = () => show('roadmap');
+tabs.say.onclick = () => show('say');
+
+/* Με #say στη διεύθυνση ανοίγει κατευθείαν η φόρμα: η εφαρμογή στέλνει εκεί
+   όποιον πατάει «Δήλωσε πρόβλημα». */
+if (location.hash === '#say') show('say');
+
+load();
+</script>
+</body>
+</html>
